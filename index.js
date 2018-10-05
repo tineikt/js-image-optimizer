@@ -32,7 +32,7 @@ const optimizeJpg = (res) => {
 	console.log("Optimizing JPG...");
 	res.writeHead(200, { ...commonHeaders, 'Content-Type': 'image/jpeg' });
 
-	const args = [ '-Q', '-', '-' ];
+	const args = [ '-Q', '--min', '35', '--max', '85', '--strip', '--method', 'smallfry', '--loops', '16',  '-', '-' ];
 	return spawn(jpgToolPath, args, { stdio: [ 'pipe', 'pipe', process.stderr  ] });
 };
 
@@ -48,7 +48,7 @@ const optimizeSvg = (res) => {
 	console.log("Optimizing SVG...");
 	res.writeHead(200, { ...commonHeaders, 'Content-Type': 'image/svg+xml' });
 
-	const args = [ '-p', '3', '-i', '-', '-o', '-' ];
+	const args = [ '-p', '3', '--disable', 'removeUnknownsAndDefaults', '-i', '-', '-o', '-' ];
 	return spawn(svgToolPath, args, { stdio: [ 'pipe', 'pipe', process.stderr  ] });
 };
 
@@ -79,10 +79,16 @@ const pickConverter = (url, accept) => {
 };
 
 app.get('/*', async function (req, res) {
+	if(req.path === "/server/status") {
+		res.send("UP");
+		return;
+	}
+
 	if(req.path.indexOf('http') === -1) {
 		res.send("Wrong URL format");
 		return;
 	}
+
 	const url = convertPath(req.path);
 	console.log(`Fetching from ${url}`);
 
@@ -95,13 +101,13 @@ app.get('/*', async function (req, res) {
 	};
 
 	httpLibToUse(url).get(sourceRequest, (streamInc) => {
-		if(streamInc.statusCode >= 400) {
+		if (streamInc.statusCode >= 400) {
 			res.writeHead(streamInc.statusCode);
 			res.end();
 			return;
 		}
 
-		if(converter != null) {
+		if (converter != null) {
 			const process = converter(res);
 			pump(streamInc, process.stdin, logError);
 			pump(process.stdout, res, logError);
@@ -113,6 +119,10 @@ app.get('/*', async function (req, res) {
 			});
 			pump(streamInc, res, logError);
 		}
+	}).on('error', e => {
+		console.warn("Error occured: ", e.message);
+		res.writeHead(500);
+		res.end();
 	});
 });
 
