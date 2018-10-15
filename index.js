@@ -78,6 +78,19 @@ const pickConverter = (url, accept) => {
 	return null;
 };
 
+const setHostHeaderForSourceRequest = (url, sourceRequest, incRequest) => {
+	if(url.indexOf("tine.no") !== -1) {
+		sourceRequest.setHost = false;
+		sourceRequest.headers = {
+			'Host': incRequest.headers['host']
+		};
+	}
+};
+
+/**
+ * Main entry point for requests. Fetches the complete URL from the path supplied, pipes the contents through an optimizer based on file name.
+ */
+
 app.get('/*', async function (req, res) {
 	if(req.path === "/server/status") {
 		res.send("UP");
@@ -95,10 +108,7 @@ app.get('/*', async function (req, res) {
 	const converter = pickConverter(url, req.headers['accept']);
 
 	const sourceRequest = urlLib.parse(url);
-	sourceRequest.setHost = false;
-	sourceRequest.headers = {
-		'Host': req.headers['host']
-	};
+	setHostHeaderForSourceRequest(url, sourceRequest, req);
 
 	httpLibToUse(url).get(sourceRequest, (streamInc) => {
 		if (streamInc.statusCode >= 400) {
