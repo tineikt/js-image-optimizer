@@ -59,7 +59,9 @@ const logError = (err) => {
 };
 
 const pickConverter = (url, accept) => {
-	if(_.endsWith(url, ".svg")) {
+	const moddedPath = _.toLower(url);
+
+	if(_.endsWith(moddedPath, ".svg")) {
 		return optimizeSvg;
 	}
 
@@ -67,11 +69,11 @@ const pickConverter = (url, accept) => {
 		return convertWebP;
 	}
 
-	if(_.endsWith(url, ".png")) {
+	if(_.endsWith(moddedPath, ".png")) {
 		return optimizePng;
 	}
 
-	if(_.endsWith(url, ".jpg")) {
+	if(_.endsWith(moddedPath, ".jpg") || _.endsWith(moddedPath, ".jpeg")) {
 		return optimizeJpg;
 	}
 
@@ -102,7 +104,7 @@ app.get('/*', async function (req, res) {
 		return;
 	}
 
-	const url = convertPath(req.path);
+	const url = convertPath(req.originalUrl);
 	console.log(`Fetching from ${url}`);
 
 	const converter = pickConverter(url, req.headers['accept']);
@@ -110,17 +112,31 @@ app.get('/*', async function (req, res) {
 	const sourceRequest = urlLib.parse(url);
 	setHostHeaderForSourceRequest(url, sourceRequest, req);
 
+	console.log(`Forwarding proxy ips: ${req.headers['x-forwarded-for'] || req.ip}`);
+	sourceRequest.headers = {
+		...sourceRequest.headers,
+		'X-Forwarded-For': req.headers['x-forwarded-for'] || req.ip
+	};
+
+
 	httpLibToUse(url).get(sourceRequest, (streamInc) => {
 		if (streamInc.statusCode >= 400) {
 			res.writeHead(streamInc.statusCode);
 			res.end();
+			streamInc.destroy();
 			return;
 		}
 
 		if (converter != null) {
 			const process = converter(res);
 			pump(streamInc, process.stdin, logError);
-			pump(process.stdout, res, logError);
+			pump(process.stdout, res, (err) => {
+				if(err !== undefined) {
+					logError(err);
+				}
+				console.log("Image processing finished.");
+				res.end();
+			});
 
 		} else {
 			res.writeHead(200, {
