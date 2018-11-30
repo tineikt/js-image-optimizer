@@ -24,7 +24,7 @@ const convertWebP = (res) => {
 	console.log("Converting to WebP...");
 	res.writeHead(200, { ...commonHeaders, 'Content-Type': 'image/webp' });
 
-	const args = [ '-quiet', '-o', '-', '--', '-' ];
+	const args = [ '-quiet', '-metadata', 'icc', '-o', '-', '--', '-' ];
 	return spawn(webpToolPath, args, { stdio: [ 'pipe', 'pipe', process.stderr  ] });
 };
 
