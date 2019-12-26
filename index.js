@@ -13,7 +13,14 @@ const webpToolPath = process.env.WEBPPATH || './binary_tools/windows/webp/cwebp.
 const svgToolPath = process.env.SVGPATH || 'svgo.cmd';
 const port = process.env.PORT || 3003;
 
-const convertPath = (path) => path.substring(1);
+const convertPath = (path) => {
+	if(path.indexOf('http') === -1) {
+		return "https:/" + path;
+	} else {
+		return path.substring(1);
+	}
+}
+
 const httpLibToUse = (url) => (url.startsWith("https")) ? https : http;
 
 const commonHeaders = {
@@ -96,11 +103,6 @@ const setHostHeaderForSourceRequest = (url, sourceRequest, incRequest) => {
 app.get('/*', async function (req, res) {
 	if(req.path === "/server/status") {
 		res.send("UP");
-		return;
-	}
-
-	if(req.path.indexOf('http') === -1) {
-		res.send("Wrong URL format");
 		return;
 	}
 
