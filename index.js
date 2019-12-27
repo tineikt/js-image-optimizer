@@ -106,6 +106,12 @@ app.get('/*', async function (req, res) {
 		return;
 	}
 
+	// Handle some common default requests as 404
+	if(req.path === "/favicon.ico" || req.path === "/") {
+		res.sendStatus(404);
+		return;
+	}
+
 	const url = convertPath(req.originalUrl);
 	console.log(`Fetching from ${url}`);
 
