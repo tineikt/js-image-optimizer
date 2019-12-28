@@ -111,7 +111,7 @@ app.get('/*', async function (req, res) {
 		res.sendStatus(404);
 		return;
 	}
-	
+
 	const url = convertPath(req.originalUrl);
 	console.log(`Fetching from ${url}`);
 
