@@ -24,7 +24,7 @@ const convertPath = (path) => {
 const httpLibToUse = (url) => (url.startsWith("https")) ? https : http;
 
 const commonHeaders = {
-	'Cache-Control': 'public, max-age=31536000'
+	'Cache-Control': 'public, max-age=' + (60 * 60 * 24 * 5)
 };
 
 const convertWebP = (res) => {
