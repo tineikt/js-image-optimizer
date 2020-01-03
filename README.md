@@ -12,3 +12,6 @@ To run this locally on Windows, you can use the included binary tools. All you n
 
 ## Running on linux
 On linux you will have to download and compile jpeg-archive (jpeg-recompress), pngquant, cwebp from your favorite package manager / source and install svgo from npm.
+
+## Docker base image
+All the different command line apps are installed and ready to use in the docker base image used by the build process. You can read more about how to change the base image in BASEIMAGE.md
