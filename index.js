@@ -66,7 +66,11 @@ const logError = (err) => {
 };
 
 const pickConverter = (url, accept) => {
-	const moddedPath = _.toLower(url);
+	const moddedPath = _.trim(_.toLower(url));
+
+	if(_.endsWith(moddedPath, ".json")) {
+		return null;
+	}
 
 	if(_.endsWith(moddedPath, ".svg")) {
 		return optimizeSvg;
@@ -120,12 +124,10 @@ app.get('/*', async function (req, res) {
 	const sourceRequest = urlLib.parse(url);
 	setHostHeaderForSourceRequest(url, sourceRequest, req);
 
-	console.log(`Forwarding proxy ips: ${req.headers['x-forwarded-for'] || req.ip}`);
 	sourceRequest.headers = {
 		...sourceRequest.headers,
 		'X-Forwarded-For': req.headers['x-forwarded-for'] || req.ip
 	};
-
 
 	httpLibToUse(url).get(sourceRequest, (streamInc) => {
 		if (streamInc.statusCode >= 400) {
@@ -147,9 +149,10 @@ app.get('/*', async function (req, res) {
 			});
 
 		} else {
+			console.log("Forwarding response directly.");
 			res.writeHead(200, {
-				'Cache-Control': streamInc.headers["cache-control"],
-				'Content-Type': streamInc.headers["content-type"]
+				'Cache-Control': _.defaultTo(streamInc.headers["cache-control"], ""),
+				'Content-Type': _.defaultTo(streamInc.headers["content-type"], "image/jpeg")
 			});
 			pump(streamInc, res, logError);
 		}
